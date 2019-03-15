@@ -11,6 +11,7 @@ mess2send=generateMessage(header,message,bufferSize);
 
 %Send message through channel
 
+%plot(real(mess2send));
 receivedMess=nonflat_channel(mess2send);
 
 %Estimate H
@@ -18,18 +19,26 @@ receivedMess=nonflat_channel(mess2send);
 [correlation,lag] = xcorr(receivedMess,mess2send(1:160));
 [M,I]=max(abs(correlation));
 lagDiff=lag(I);
-trimmedMessage=receivedMess(lagDiff+1:(lagDiff)+length(mess2send)-(2*bufferSize));
+receivedMess=receivedMess.';
+trimmedMessage=receivedMess(lagDiff+1+50:50+(lagDiff)+length(header)*80/64);
+trimmedTotal=receivedMess((lagDiff)+length(header)*80/64+1000+1+50+16:50+16+(lagDiff)+length(header)*80/64+1000+length(message));
+
+%plot(real(receivedMess));
+%plot(real(trimmedMessage));
+%plot(real(trimmedTotal));
 
 %take FFT of trimmed signal for header
-for i=1:(length(mess2send)-(2*bufferSize))/80
-    final(64*(i-1)+1:64*(i-1)+64)= ifft(trimmedMessage((i-1)*64+17:(i-1)*64+80));
+for i=1:(length(trimmedMessage))/80
+    final(64*(i-1)+1:64*(i-1)+64)= fft(trimmedMessage((i-1)*80+17:(i-1)*80+80));
 end
+final(6401:6464)= fft(trimmedTotal);
 
 %Divide Yk/Hk
-HEstimate=mean(abs(final(1:6400).'./header));
+HEstimate=mean(final(1:6400)./header.');
 
 MessageEstimate=final(6401:6464)/HEstimate;
 normalEst=normalize(MessageEstimate);
+%plot(real(MessageEstimate));
 
 error=0;
 for i=1:length(normalEst)

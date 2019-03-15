@@ -2,14 +2,19 @@
 %Kimberly Winter
 
 function ifftMess=generateMessage(header, message, bufferSize)
-    mess2send=zeros((length(header)+length(message))*(80/64)+2*bufferSize,1);
-    totalmessage=[header;message];
     
-    for i=1:length(totalmessage)/64
-        mess2send(bufferSize+1+(i-1)*64:bufferSize+16+(i-1)*64)=totalmessage(i*64-15:i*64);
-        mess2send(bufferSize+17+(i-1)*64:bufferSize+80+(i-1)*64)=totalmessage((i-1)*64+1:i*64);
+    totalMessage=[header;message];
+    
+    for i=1:length(header)/64
+        chunk=ifft(totalMessage((i-1)*64+1:i*64));
+        ifftMess(bufferSize+(i-1)*80+1:bufferSize+(i-1)*80+16)=chunk(end-15:end);
+        ifftMess(bufferSize+(i-1)*80+17:bufferSize+(i*80))=chunk;
     end
     
-    %IFFT
-    ifftMess=ifft(mess2send);
+    for i=length(header)/64+1:length(header)/64+length(message)/64
+        chunk=ifft(totalMessage((i-1)*64+1:i*64));
+        ifftMess(bufferSize+1000+(i-1)*80+1:bufferSize+1000+(i-1)*80+16)=chunk(end-15:end);
+        ifftMess(bufferSize+1000+(i-1)*80+17:bufferSize+1000+(i-1)*80+80)=chunk;
+    end
+    
 end
